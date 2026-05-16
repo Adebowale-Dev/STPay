@@ -1,0 +1,182 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+:root {
+  --radius: 1.25rem;
+  --background: #f6f7f2;
+  --foreground: #0d1730;
+  --card: #ffffff;
+  --card-foreground: #0d1730;
+  --popover: #ffffff;
+  --popover-foreground: #0d1730;
+  --primary: #0d1730;
+  --primary-foreground: #f8fafc;
+  --secondary: #e8f5ee;
+  --secondary-foreground: #0d1730;
+  --muted: #edf1ec;
+  --muted-foreground: #5e6b7f;
+  --accent: #dff5ea;
+  --accent-foreground: #0d1730;
+  --destructive: #c2410c;
+  --border: rgba(13, 23, 48, 0.1);
+  --input: rgba(13, 23, 48, 0.08);
+  --ring: rgba(19, 168, 104, 0.35);
+  --surface: rgba(255, 255, 255, 0.88);
+  --surface-strong: #ffffff;
+  --card-shadow: 0 24px 80px rgba(13, 23, 48, 0.08);
+  --border-soft: rgba(13, 23, 48, 0.08);
+  --brand-green: #13a868;
+  --brand-green-dark: #0e8b56;
+  --brand-navy: #0d1730;
+  --brand-slate: #5e6b7f;
+  --brand-mint: #dff5ea;
+  --brand-cream: #fbfbf8;
+  --brand-line: rgba(13, 23, 48, 0.06);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 0.5rem);
+  --radius-md: calc(var(--radius) - 0.25rem);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 0.5rem);
+  --font-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Consolas", "SFMono-Regular", "Liberation Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(19, 168, 104, 0.08), transparent 24%),
+    radial-gradient(circle at top right, rgba(13, 23, 48, 0.05), transparent 22%),
+    linear-gradient(180deg, #fcfcf9 0%, #f4f6f2 46%, #f7f8f5 100%);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(19, 168, 104, 0.22);
+}
+
+.stpay-shell {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%);
+}
+
+.stpay-surface {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.stpay-panel {
+  background: var(--surface-strong);
+  border: 1px solid rgba(226, 232, 240, 0.88);
+  box-shadow: 0 18px 60px rgba(15, 23, 42, 0.05);
+}
+
+.stpay-grid {
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.stpay-auth-shell {
+  background:
+    radial-gradient(circle at top left, rgba(19, 168, 104, 0.12), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(13, 23, 48, 0.08), transparent 28%),
+    linear-gradient(180deg, #fafbf8 0%, #f2f5f2 100%);
+}
+
+.stpay-auth-card {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(20px);
+}
+
+.stpay-field {
+  height: 3.25rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  background: rgba(248, 250, 252, 0.95);
+  padding-inline: 1rem;
+  outline: none;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.stpay-field:focus {
+  border-color: rgba(19, 168, 104, 0.65);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(19, 168, 104, 0.08);
+}
+
+.ticker-mask {
+  overflow: hidden;
+}
+
+.ticker-track {
+  display: flex;
+  width: max-content;
+  gap: 2rem;
+  animation: stpay-ticker 28s linear infinite;
+}
+
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.875rem;
+  white-space: nowrap;
+}
+
+@keyframes stpay-ticker {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}

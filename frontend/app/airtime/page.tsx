@@ -1,0 +1,26 @@
+import { AppShell } from "@/components/AppShell";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+
+export default function AirtimePage() {
+  return (
+    <ProtectedRoute>
+      <AppShell
+        title="Buy Airtime"
+        description="Top up MTN, Airtel, Glo, or 9mobile directly from your STPay wallet."
+      >
+        <Placeholder title="Airtime purchase flow ready for final UI wiring." />
+      </AppShell>
+    </ProtectedRoute>
+  );
+}
+
+function Placeholder({ title }: { title: string }) {
+  return (
+    <div className="stpay-panel rounded-[1.9rem] p-6">
+      <p className="text-lg font-semibold text-slate-950">{title}</p>
+      <p className="mt-3 text-sm leading-7 text-slate-600">
+        This page exists now and can be safely linked from dashboard and mobile navigation.
+      </p>
+    </div>
+  );
+}
