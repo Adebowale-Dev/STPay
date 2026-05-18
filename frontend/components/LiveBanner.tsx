@@ -22,10 +22,10 @@ const bannerItems = [
 
 export function LiveBanner() {
   return (
-    <section className="fixed inset-x-0 top-[660px] z-40 px-2 sm:px-3 lg:px-4">
-      <div className="mx-auto max-w-none overflow-hidden rounded-full border border-white/20 bg-[rgba(13,23,48,0.52)] text-white shadow-[0_20px_50px_rgba(13,23,48,0.18)] backdrop-blur-xl">
-        <div className="flex items-center gap-3 px-4 py-2 sm:px-5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10">
+    <section className="fixed inset-x-0 top-[88px] z-40 px-4 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-7xl overflow-hidden rounded-full border border-[rgba(13,23,48,0.08)] bg-[rgba(255,255,255,0.78)] text-[var(--brand-navy)] shadow-[0_16px_40px_rgba(13,23,48,0.08)] backdrop-blur-xl">
+        <div className="flex items-center gap-3 px-4 py-2.5 sm:px-5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand-mint)]">
             <BellRing className="h-4 w-4 text-[var(--brand-mint)]" />
           </div>
 
@@ -36,14 +36,14 @@ export function LiveBanner() {
 
                 return (
                   <div key={`${item.title}-${index}`} className="ticker-item">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10">
-                      <Icon className="h-3.5 w-3.5 text-[var(--brand-mint)]" />
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--brand-mint)]">
+                      <Icon className="h-3.5 w-3.5 text-[var(--brand-green-dark)]" />
                     </span>
-                    <p className="text-[13px] font-semibold tracking-[-0.02em] text-white">
+                    <p className="text-[13px] font-semibold tracking-[-0.02em] text-[var(--brand-navy)]">
                       {item.title}
                     </p>
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-white/35" />
-                    <p className="whitespace-nowrap text-[13px] text-white/72">
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[rgba(13,23,48,0.22)]" />
+                    <p className="whitespace-nowrap text-[13px] text-muted-foreground">
                       {item.description}
                     </p>
                   </div>
