@@ -19,8 +19,13 @@ class RegisterRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    identifier: str
-    password: str
+    identifier: str = Field(min_length=1, max_length=255)
+    password: str = Field(min_length=1, max_length=128)
+
+    @field_validator("identifier")
+    @classmethod
+    def normalize_identifier(cls, value: str) -> str:
+        return value.strip()
 
 
 class VerifyEmailRequest(BaseModel):
@@ -53,4 +58,3 @@ class AuthPayload(BaseModel):
     user: UserResponse
 
     model_config = ConfigDict(from_attributes=True)
-

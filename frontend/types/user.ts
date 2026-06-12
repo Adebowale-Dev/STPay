@@ -22,3 +22,11 @@ export type WalletBalance = {
 export type AuthUser = User & {
   token?: string;
 };
+
+export type AdminUser = User & {
+  wallet_account_number?: string | null;
+  wallet_balance?: number;
+  wallet_currency?: string;
+  transaction_count?: number;
+  last_transaction_at?: string | null;
+};

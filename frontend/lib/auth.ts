@@ -9,6 +9,28 @@ function isBrowser() {
   return typeof window !== "undefined";
 }
 
+function decodeTokenPayload(token: string): { exp?: number } | null {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) {
+      return null;
+    }
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    return JSON.parse(window.atob(padded)) as { exp?: number };
+  } catch {
+    return null;
+  }
+}
+
+export function isAuthTokenValid(token: string | null) {
+  if (!isBrowser() || !token) {
+    return false;
+  }
+  const payload = decodeTokenPayload(token);
+  return Boolean(payload?.exp && payload.exp * 1000 > Date.now());
+}
+
 export function storeAuthSession(token: string, user: User) {
   if (!isBrowser()) {
     return;
@@ -29,7 +51,12 @@ export function getAuthToken() {
   if (!isBrowser()) {
     return null;
   }
-  return window.localStorage.getItem(TOKEN_KEY);
+  const token = window.localStorage.getItem(TOKEN_KEY);
+  if (!isAuthTokenValid(token)) {
+    clearAuthSession();
+    return null;
+  }
+  return token;
 }
 
 export function getStoredUser(): User | null {
@@ -49,7 +76,7 @@ export function getStoredUser(): User | null {
 }
 
 export function isAuthenticated() {
-  return Boolean(getAuthToken());
+  return isAuthTokenValid(getAuthToken());
 }
 
 export function isAdminUser() {

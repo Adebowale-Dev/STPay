@@ -28,7 +28,13 @@ python -m pip install -r requirements.txt
 python seed_admin.py
 ```
 
-6. Start the API:
+6. Seed the default demo customer:
+
+```powershell
+python seed_user.py
+```
+
+7. Start the API:
 
 ```powershell
 python -m uvicorn main:app --reload
@@ -50,9 +56,22 @@ FRONTEND_URL=http://localhost:3000
 
 ## Default Admin
 
-- Email: `admin@stpay.com`
-- Password: `Admin12345`
+- Email: `admin@gmail.com`
+- Password: `123456789`
 - Role: `admin`
+
+Running `python seed_admin.py` again updates the existing admin account to these
+credentials and preserves its wallet.
+
+## Default Demo User
+
+- Email: `adebowale235@gmail.com`
+- Password: `123456789`
+- Transaction PIN: `1234`
+- Role: `user`
+
+Running `python seed_user.py` again updates the existing demo customer to these
+credentials and preserves its wallet balance.
 
 ## Main Endpoints
 

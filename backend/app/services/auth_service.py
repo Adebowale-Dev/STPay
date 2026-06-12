@@ -112,11 +112,12 @@ class AuthService:
         return user
 
     def login_user(self, payload: LoginRequest) -> tuple[str, dict]:
+        identifier = payload.identifier.strip()
         user = self.db.users.find_one(
             {
                 "$or": [
-                    {"email": payload.identifier.lower()},
-                    {"phone_number": payload.identifier},
+                    {"email": identifier.lower()},
+                    {"phone_number": identifier},
                 ]
             }
         )

@@ -1,5 +1,10 @@
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pymongo.errors import PyMongoError
 
 from app.config import get_settings
@@ -16,11 +21,14 @@ from app.routes.wallet import router as wallet_router
 
 
 settings = get_settings()
+STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     description="STPay secure digital wallet and online banking backend.",
+    docs_url=None,
+    redoc_url=None,
 )
 
 app.add_middleware(
@@ -30,6 +38,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 app.include_router(auth_router)
 app.include_router(users_router)
@@ -68,3 +78,35 @@ def health() -> dict:
         "message": "Health check successful.",
         "data": {"status": "ok"},
     }
+
+
+@app.get("/docs", include_in_schema=False)
+def custom_swagger_ui():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=f"{settings.app_name} Docs",
+        swagger_favicon_url="/static/stpay-favicon.svg",
+    )
+
+
+@app.get("/redoc", include_in_schema=False)
+def custom_redoc():
+    return get_redoc_html(
+        openapi_url=app.openapi_url,
+        title=f"{settings.app_name} ReDoc",
+        redoc_favicon_url="/static/stpay-favicon.svg",
+    )
+
+
+@app.get("/meta.json", include_in_schema=False)
+def meta() -> dict:
+    return {
+        "name": settings.app_name,
+        "short_name": settings.app_name,
+        "description": "Fast, Secure, and Simple Digital Banking",
+    }
+
+
+@app.get("/.well-known/appspecific/com.chrome.devtools.json", include_in_schema=False)
+def chrome_devtools_probe():
+    return JSONResponse({})

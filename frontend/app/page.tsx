@@ -12,9 +12,10 @@ import {
   Wallet,
 } from "lucide-react";
 
-import { HeroShowcase } from "@/components/HeroShowcase";
-import { LiveBanner } from "@/components/LiveBanner";
-import { Navbar } from "@/components/Navbar";
+import { HeroShowcase } from "@/components/landing/HeroShowcase";
+import { LandingPerformance } from "@/components/landing/LandingPerformance";
+import { LiveBanner } from "@/components/landing/LiveBanner";
+import { Navbar } from "@/components/landing/Navbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -150,9 +151,10 @@ export default function LandingPage() {
     <main className="min-h-screen overflow-x-hidden bg-[var(--brand-cream)] text-foreground">
       <Navbar />
       <LiveBanner />
+      <LandingPerformance />
       <HeroShowcase />
 
-      <section className="border-y border-border bg-white/75">
+      <section className="landing-lazy border-y border-border bg-white/75">
         <div className="mx-auto max-w-7xl px-4 py-18 sm:px-6 lg:px-10">
           <div className="mx-auto max-w-4xl text-center">
             <Badge className="rounded-full bg-white px-5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--brand-navy)] shadow-[0_10px_24px_rgba(13,23,48,0.04)] hover:bg-white">
@@ -189,7 +191,7 @@ export default function LandingPage() {
               size="lg"
               className="h-12 rounded-full bg-[var(--brand-green)] px-7 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(19,168,104,0.16)] hover:bg-[var(--brand-green-dark)]"
             >
-              <Link href="/register">
+              <Link href="/get-started">
                 Explore STPay Assist
                 <ArrowRight className="h-4 w-4" />
               </Link>
@@ -198,7 +200,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="features" className="bg-[linear-gradient(180deg,#e8f5ee_0%,#edf8f1_100%)] py-20">
+      <section id="features" className="landing-lazy bg-[linear-gradient(180deg,#e8f5ee_0%,#edf8f1_100%)] py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
           <div className="mx-auto max-w-3xl text-center">
             <Badge className="rounded-full bg-white px-5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--brand-green-dark)] shadow-[0_10px_24px_rgba(13,23,48,0.04)] hover:bg-white">
@@ -394,7 +396,7 @@ export default function LandingPage() {
 
       <section
         id="why-stpay"
-        className="overflow-hidden border-y border-white/6 bg-[#0a0d14] py-20 text-white"
+        className="landing-lazy overflow-hidden border-y border-white/6 bg-[#0a0d14] py-20 text-white"
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
           <div className="mx-auto max-w-3xl text-center">
@@ -435,7 +437,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-10">
+      <section className="landing-lazy mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-10">
         <div className="mx-auto max-w-3xl text-center">
           <Badge className="rounded-full bg-white px-5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--brand-navy)] shadow-[0_10px_24px_rgba(13,23,48,0.04)] hover:bg-white">
             Frequently Asked Questions
@@ -489,7 +491,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-18 sm:px-6 lg:px-10">
+      <section className="landing-lazy mx-auto max-w-7xl px-4 pb-18 sm:px-6 lg:px-10">
         <div className="relative overflow-hidden rounded-[2.8rem] bg-[linear-gradient(135deg,#0b5f3f_0%,#0e8b56_52%,#13a868_100%)] px-7 py-10 text-white shadow-[0_28px_80px_rgba(14,139,86,0.2)] sm:px-10 sm:py-12">
           <div className="pointer-events-none absolute right-[-2rem] top-1/2 h-[22rem] w-[22rem] -translate-y-1/2 rounded-full border border-white/14" />
           <div className="pointer-events-none absolute right-[2rem] top-1/2 h-[18rem] w-[18rem] -translate-y-1/2 rounded-full border border-white/10" />

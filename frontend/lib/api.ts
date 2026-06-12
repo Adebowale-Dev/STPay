@@ -1,9 +1,9 @@
 import axios from "axios";
 
-import { getAuthToken } from "@/lib/auth";
+import { clearAuthSession, getAuthToken } from "@/lib/auth";
 import { Notification } from "@/types/notification";
 import { Beneficiary, Transaction } from "@/types/transaction";
-import { User, WalletBalance } from "@/types/user";
+import { AdminUser, User, WalletBalance } from "@/types/user";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000",
@@ -19,6 +19,21 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+    const requestUrl = String(error.config?.url ?? "");
+    if (status === 401 && !requestUrl.includes("/auth/login") && typeof window !== "undefined") {
+      clearAuthSession();
+      if (window.location.pathname !== "/login") {
+        window.location.replace("/login?reason=session-expired");
+      }
+    }
+    return Promise.reject(error);
+  },
+);
 
 type ApiEnvelope<T> = {
   success: boolean;
@@ -56,6 +71,19 @@ export type LoginResponse = {
   token_type: string;
   user: User;
 };
+
+export function getApiErrorMessage(error: unknown, fallback = "Something went wrong.") {
+  if (axios.isAxiosError(error)) {
+    const detail = error.response?.data?.detail;
+    if (typeof detail === "string") {
+      return detail;
+    }
+    if (typeof error.response?.data?.message === "string") {
+      return error.response.data.message;
+    }
+  }
+  return error instanceof Error ? error.message : fallback;
+}
 
 export async function registerUser(payload: RegisterPayload) {
   const response = await api.post<ApiEnvelope<{ user: User; wallet_account_number: string }>>(
@@ -97,6 +125,16 @@ export async function fetchCurrentUser() {
 
 export async function updateProfile(payload: Partial<Pick<User, "full_name" | "phone_number">>) {
   const response = await api.patch<ApiEnvelope<User>>("/users/me", payload);
+  return response.data;
+}
+
+export async function changePassword(payload: { current_password: string; new_password: string; confirm_password: string }) {
+  const response = await api.patch<ApiEnvelope<null>>("/users/change-password", payload);
+  return response.data;
+}
+
+export async function changeTransactionPin(payload: { current_pin: string; new_pin: string; confirm_pin: string }) {
+  const response = await api.patch<ApiEnvelope<null>>("/users/change-transaction-pin", payload);
   return response.data;
 }
 
@@ -185,12 +223,30 @@ export async function markNotificationRead(id: string) {
 }
 
 export async function fetchAdminUsers() {
-  const response = await api.get<ApiEnvelope<User[]>>("/admin/users");
+  const response = await api.get<ApiEnvelope<AdminUser[]>>("/admin/users");
+  return response.data;
+}
+
+export async function fetchAdminUser(id: string) {
+  const response = await api.get<
+    ApiEnvelope<{ user: AdminUser; recent_transactions: Transaction[] }>
+  >(`/admin/users/${id}`);
   return response.data;
 }
 
 export async function fetchAdminTransactions() {
   const response = await api.get<ApiEnvelope<Transaction[]>>("/admin/transactions");
+  return response.data;
+}
+
+export async function fetchAdminTransaction(reference: string) {
+  const response = await api.get<
+    ApiEnvelope<{
+      transaction: Transaction;
+      sender: AdminUser | null;
+      receiver: AdminUser | null;
+    }>
+  >(`/admin/transactions/${reference}`);
   return response.data;
 }
 

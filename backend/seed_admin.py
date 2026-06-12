@@ -4,6 +4,11 @@ from app.utils.mongo import generate_id, to_decimal128, utc_now
 from app.utils.security import hash_value
 
 
+ADMIN_EMAIL = "admin@gmail.com"
+ADMIN_PASSWORD = "123456789"
+LEGACY_ADMIN_EMAIL = "admin@stpay.com"
+
+
 def generate_unique_account_number() -> str:
     while True:
         account_number = generate_account_number()
@@ -13,38 +18,63 @@ def generate_unique_account_number() -> str:
 
 def seed_admin() -> None:
     ensure_indexes(db)
-    admin = db.users.find_one({"email": "admin@stpay.com"})
-    if admin:
-        print("Admin user already exists.")
-        return
+    conflicting_user = db.users.find_one(
+        {"email": ADMIN_EMAIL, "role": {"$ne": "admin"}},
+    )
+    if conflicting_user:
+        raise RuntimeError(
+            f"Cannot seed admin because {ADMIN_EMAIL} belongs to a non-admin user."
+        )
 
-    admin_id = generate_id()
-    admin = {
-        "id": admin_id,
+    admin = (
+        db.users.find_one({"email": ADMIN_EMAIL})
+        or db.users.find_one({"email": LEGACY_ADMIN_EMAIL})
+        or db.users.find_one({"role": "admin"})
+    )
+    admin_id = admin["id"] if admin else generate_id()
+    now = utc_now()
+    admin_fields = {
         "full_name": "STPay Admin",
-        "email": "admin@stpay.com",
+        "email": ADMIN_EMAIL,
         "phone_number": "09000000000",
-        "password_hash": hash_value("Admin12345"),
+        "password_hash": hash_value(ADMIN_PASSWORD),
         "transaction_pin_hash": hash_value("1234"),
         "role": "admin",
         "is_active": True,
         "is_frozen": False,
         "is_email_verified": True,
-        "created_at": utc_now(),
-        "updated_at": utc_now(),
+        "updated_at": now,
     }
-    wallet = {
-        "id": generate_id(),
-        "user_id": admin_id,
-        "account_number": generate_unique_account_number(),
-        "balance": to_decimal128("0.00"),
-        "currency": "NGN",
-        "created_at": utc_now(),
-        "updated_at": utc_now(),
-    }
-    db.users.insert_one(admin)
-    db.wallets.insert_one(wallet)
-    print("Admin user created successfully.")
+
+    if admin:
+        db.users.update_one({"id": admin_id}, {"$set": admin_fields})
+        action = "updated"
+    else:
+        db.users.insert_one(
+            {
+                "id": admin_id,
+                **admin_fields,
+                "created_at": now,
+            }
+        )
+        action = "created"
+
+    if db.wallets.find_one({"user_id": admin_id}) is None:
+        db.wallets.insert_one(
+            {
+                "id": generate_id(),
+                "user_id": admin_id,
+                "account_number": generate_unique_account_number(),
+                "balance": to_decimal128("0.00"),
+                "currency": "NGN",
+                "created_at": now,
+                "updated_at": now,
+            }
+        )
+
+    print(f"Admin user {action} successfully.")
+    print(f"Email: {ADMIN_EMAIL}")
+    print(f"Password: {ADMIN_PASSWORD}")
 
 
 if __name__ == "__main__":
