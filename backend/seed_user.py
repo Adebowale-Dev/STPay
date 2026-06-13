@@ -1,5 +1,5 @@
 from app.database import db, ensure_indexes
-from app.utils.generate_account import generate_account_number
+from app.utils.generate_account import account_number_from_phone
 from app.utils.mongo import generate_id, to_decimal128, utc_now
 from app.utils.security import hash_value
 
@@ -8,13 +8,6 @@ USER_EMAIL = "adebowale235@gmail.com"
 USER_PASSWORD = "123456789"
 USER_PHONE = "08100000001"
 USER_TRANSACTION_PIN = "1234"
-
-
-def generate_unique_account_number() -> str:
-    while True:
-        account_number = generate_account_number()
-        if db.wallets.find_one({"account_number": account_number}) is None:
-            return account_number
 
 
 def seed_user() -> None:
@@ -46,6 +39,9 @@ def seed_user() -> None:
         "is_active": True,
         "is_frozen": False,
         "is_email_verified": True,
+        "account_tier": existing_user.get("account_tier", 1) if existing_user else 1,
+        "nin_verified": existing_user.get("nin_verified", False) if existing_user else False,
+        "bvn_verified": existing_user.get("bvn_verified", False) if existing_user else False,
         "updated_at": now,
     }
 
@@ -58,11 +54,16 @@ def seed_user() -> None:
 
     wallet = db.wallets.find_one({"user_id": user_id})
     if wallet is None:
+        account_number = account_number_from_phone(user_fields["phone_number"])
+        if db.wallets.find_one({"account_number": account_number}) is not None:
+            raise RuntimeError(
+                f"Cannot create demo wallet because account number {account_number} is already in use."
+            )
         db.wallets.insert_one(
             {
                 "id": generate_id(),
                 "user_id": user_id,
-                "account_number": generate_unique_account_number(),
+                "account_number": account_number,
                 "balance": to_decimal128("0.00"),
                 "currency": "NGN",
                 "created_at": now,

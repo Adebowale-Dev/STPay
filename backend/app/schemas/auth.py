@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.schemas.user import UserResponse
+from app.utils.generate_account import normalize_nigerian_phone_number
 
 
 class RegisterRequest(BaseModel):
@@ -9,6 +10,11 @@ class RegisterRequest(BaseModel):
     phone_number: str = Field(min_length=7, max_length=20)
     password: str = Field(min_length=8, max_length=128)
     transaction_pin: str = Field(min_length=4, max_length=4)
+
+    @field_validator("phone_number")
+    @classmethod
+    def normalize_phone_number(cls, value: str) -> str:
+        return normalize_nigerian_phone_number(value)
 
     @field_validator("transaction_pin")
     @classmethod
@@ -25,12 +31,26 @@ class LoginRequest(BaseModel):
     @field_validator("identifier")
     @classmethod
     def normalize_identifier(cls, value: str) -> str:
-        return value.strip()
+        identifier = value.strip()
+        if "@" not in identifier:
+            try:
+                return normalize_nigerian_phone_number(identifier)
+            except ValueError:
+                pass
+        return identifier
 
 
 class VerifyEmailRequest(BaseModel):
     email: EmailStr
-    otp: str = Field(min_length=4, max_length=10)
+    otp: str
+
+    @field_validator("otp")
+    @classmethod
+    def validate_otp(cls, value: str) -> str:
+        otp = "".join(character for character in value if character.isdigit())
+        if len(otp) != 6:
+            raise ValueError("Verification code must be exactly 6 digits.")
+        return otp
 
 
 class ResendVerificationCodeRequest(BaseModel):

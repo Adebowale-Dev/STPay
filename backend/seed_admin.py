@@ -43,6 +43,9 @@ def seed_admin() -> None:
         "is_active": True,
         "is_frozen": False,
         "is_email_verified": True,
+        "account_tier": 3,
+        "nin_verified": True,
+        "bvn_verified": True,
         "updated_at": now,
     }
 

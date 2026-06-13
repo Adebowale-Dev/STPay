@@ -27,6 +27,20 @@ def get_balance(
     }
 
 
+@router.get("/resolve-account/{account_number}")
+def resolve_account(
+    account_number: str,
+    db: Database = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    account = WalletService(db).resolve_account(current_user, account_number)
+    return {
+        "success": True,
+        "message": "Account resolved successfully.",
+        "data": account,
+    }
+
+
 @router.post("/fund")
 def fund_wallet(
     payload: FundWalletRequest,
@@ -41,6 +55,9 @@ def fund_wallet(
             "reference": transaction["reference"],
             "amount": transaction["amount"],
             "balance": wallet["balance"],
+            "status": transaction["status"],
+            "description": transaction["description"],
+            "created_at": transaction["created_at"],
         },
     }
 
@@ -51,7 +68,9 @@ def transfer(
     db: Database = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ) -> dict:
-    wallet, transaction = WalletService(db).transfer(current_user, payload)
+    service = WalletService(db)
+    account = service.resolve_account(current_user, payload.receiver_account_number)
+    wallet, transaction = service.transfer(current_user, payload)
     return {
         "success": True,
         "message": "Transfer successful",
@@ -59,5 +78,12 @@ def transfer(
             "reference": transaction["reference"],
             "amount": transaction["amount"],
             "balance": wallet["balance"],
+            "status": transaction["status"],
+            "description": transaction["description"],
+            "created_at": transaction["created_at"],
+            "sender_name": current_user["full_name"],
+            "receiver_name": account["account_name"],
+            "receiver_account_number": account["account_number"],
+            "bank_name": account["bank_name"],
         },
     }

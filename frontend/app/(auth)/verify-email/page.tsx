@@ -1,10 +1,11 @@
 "use client";
 
 import { Suspense } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
-import { resendVerificationCode, verifyEmail } from "@/lib/api";
+import { getApiErrorMessage, resendVerificationCode, verifyEmail } from "@/lib/api";
 
 export default function VerifyEmailPage() {
   return (
@@ -21,32 +22,73 @@ function VerifyEmailContent() {
   const [otp, setOtp] = useState("");
   const [message, setMessage] = useState("A verification code has been sent to your email address.");
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [verified, setVerified] = useState(false);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setResendCooldown((current) => Math.max(0, current - 1));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [resendCooldown]);
 
   async function handleVerify(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedOtp = otp.replace(/\D/g, "");
+
+    if (!normalizedEmail) {
+      setError("Enter the email address used to create your account.");
+      return;
+    }
+    if (normalizedOtp.length !== 6) {
+      setError("Enter the complete 6-digit verification code.");
+      return;
+    }
+
+    setVerifying(true);
     setError(null);
     try {
-      const response = await verifyEmail({ email, otp });
-      setMessage(response.message);
+      const response = await verifyEmail({ email: normalizedEmail, otp: normalizedOtp });
+      setVerified(true);
+      setMessage(`${response.message} Redirecting you to login...`);
+      window.setTimeout(() => {
+        window.location.assign(
+          `/login?verified=true&email=${encodeURIComponent(normalizedEmail)}`,
+        );
+      }, 800);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Verification failed.");
+      setError(getApiErrorMessage(err, "Verification failed."));
     } finally {
-      setLoading(false);
+      setVerifying(false);
     }
   }
 
   async function handleResend() {
-    setLoading(true);
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      setError("Enter the email address used to create your account.");
+      return;
+    }
+
+    setResending(true);
     setError(null);
     try {
-      const response = await resendVerificationCode(email);
-      setMessage(response.message);
+      const response = await resendVerificationCode(normalizedEmail);
+      setOtp("");
+      setResendCooldown(30);
+      setMessage(`${response.message} Previous verification codes are no longer valid.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to resend OTP.");
+      setError(getApiErrorMessage(err, "Unable to resend OTP."));
     } finally {
-      setLoading(false);
+      setResending(false);
     }
   }
 
@@ -56,18 +98,39 @@ function VerifyEmailContent() {
       description="Enter the OTP sent to your inbox to unlock login and protected wallet actions."
     >
       <form onSubmit={handleVerify} className="grid gap-4">
-        <Field label="Email address" value={email} onChange={setEmail} />
-        <Field label="OTP code" value={otp} onChange={setOtp} />
+        <Field label="Email address" value={email} onChange={setEmail} type="email" />
+        <Field
+          label="OTP code"
+          value={otp}
+          onChange={(value) => setOtp(value.replace(/\D/g, "").slice(0, 6))}
+          inputMode="numeric"
+          maxLength={6}
+        />
         {message ? <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</p> : null}
         {error ? <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p> : null}
         <div className="flex flex-wrap gap-3">
-          <button type="submit" disabled={loading} className="rounded-full bg-[linear-gradient(135deg,_#0f9f69,_#0c7a51)] px-5 py-3 text-sm font-semibold text-white">
-            {loading ? "Verifying..." : "Verify"}
+          <button type="submit" disabled={verified || verifying || resending} className="rounded-full bg-[linear-gradient(135deg,_#0f9f69,_#0c7a51)] px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">
+            {verifying ? "Verifying..." : "Verify"}
           </button>
-          <button type="button" onClick={handleResend} disabled={loading} className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700">
-            Resend OTP
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={verified || verifying || resending || resendCooldown > 0}
+            className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {resending
+              ? "Sending new code..."
+              : resendCooldown > 0
+                ? `Resend available in ${resendCooldown}s`
+                : "Request new OTP"}
           </button>
         </div>
+        <Link
+          href={`/login?${verified ? "verified=true&" : ""}email=${encodeURIComponent(email.trim().toLowerCase())}`}
+          className="mx-auto inline-flex w-fit text-center text-sm font-semibold text-emerald-700 transition hover:text-emerald-600 hover:underline focus-visible:underline"
+        >
+          {verified ? "Continue to login" : "Already verified? Continue to login"}
+        </Link>
       </form>
     </SimpleAuthPage>
   );
@@ -111,15 +174,24 @@ function Field({
   label,
   value,
   onChange,
+  type = "text",
+  inputMode,
+  maxLength,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  type?: string;
+  inputMode?: "numeric";
+  maxLength?: number;
 }) {
   return (
     <label className="grid gap-2 text-sm font-medium text-slate-700">
       {label}
       <input
+        type={type}
+        inputMode={inputMode}
+        maxLength={maxLength}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className="h-12 rounded-2xl border border-slate-200 bg-white px-4 outline-none transition focus:border-emerald-500"

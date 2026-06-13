@@ -32,6 +32,12 @@ def add_beneficiary(
     db: Database = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ) -> dict:
+    existing = db.beneficiaries.find_one(
+        {"user_id": current_user["id"], "account_number": payload.account_number}
+    )
+    if existing is not None:
+        raise HTTPException(status_code=409, detail="This account is already saved as a beneficiary.")
+
     beneficiary = {
         "id": generate_id(),
         "user_id": current_user["id"],

@@ -1,9 +1,10 @@
 "use client";
 
-import { Download, Search, ShieldCheck, UserRoundCheck, UsersRound } from "lucide-react";
+import { Download, Plus, Search, ShieldCheck, UserRoundCheck, UsersRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
+import { AdminCreateCustomerDialog } from "@/components/admin/AdminCreateCustomerDialog";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminUserDrawer } from "@/components/admin/AdminUserDrawer";
 import { AdminUsersTable } from "@/components/admin/AdminUsersTable";
@@ -28,6 +29,7 @@ export default function AdminUsersPage() {
   const [pendingStatusUser, setPendingStatusUser] = useState<AdminUser | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
     fetchAdminUsers()
@@ -111,13 +113,16 @@ export default function AdminUsersPage() {
                 </button>
               ))}
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <label className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 lg:w-72">
                 <Search className="h-3.5 w-3.5 text-white/25" />
                 <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search name, email, phone, account..." className="h-10 min-w-0 flex-1 bg-transparent text-[10px] text-white outline-none placeholder:text-white/25" />
               </label>
               <button type="button" onClick={() => downloadCsv("stpay-customers.csv", filteredUsers.map((user) => ({ name: user.full_name, email: user.email, phone: user.phone_number, account_number: user.wallet_account_number, balance: user.wallet_balance, verified: user.is_email_verified, frozen: user.is_frozen, joined: user.created_at })))} className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] px-3 text-[10px] text-white/55 hover:bg-white/[0.05]">
                 <Download className="h-3.5 w-3.5" /> Export
+              </button>
+              <button type="button" onClick={() => setCreateOpen(true)} className="inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-400 px-3 text-[10px] font-semibold text-[#07100b] hover:bg-emerald-300">
+                <Plus className="h-3.5 w-3.5" /> New customer
               </button>
             </div>
           </div>
@@ -130,6 +135,7 @@ export default function AdminUsersPage() {
         </div>
 
         <AdminUserDrawer user={selectedUser} transactions={selectedTransactions} loading={detailLoading} onClose={() => setSelectedUser(null)} onStatusChange={setPendingStatusUser} />
+        <AdminCreateCustomerDialog open={createOpen} onClose={() => setCreateOpen(false)} onCreated={(user) => setUsers((current) => [user, ...current])} />
         <AdminConfirmDialog
           open={Boolean(pendingStatusUser)}
           title={pendingStatusUser?.is_frozen ? "Restore customer access?" : "Freeze customer account?"}

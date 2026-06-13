@@ -16,6 +16,13 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def is_expired(expires_at: datetime) -> bool:
+    """Compare MongoDB datetimes safely, since PyMongo returns naive UTC values."""
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    return expires_at < utc_now()
+
+
 def normalize_money(value: Decimal | str | int | float) -> Decimal:
     return Decimal(str(value)).quantize(TWOPLACES, rounding=ROUND_HALF_UP)
 

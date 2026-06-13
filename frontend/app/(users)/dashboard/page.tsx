@@ -30,11 +30,6 @@ export default function DashboardPage() {
       .catch((err) => setError(`${getApiErrorMessage(err)} Showing the latest local preview.`));
   }, []);
 
-  const totals = useMemo(() => ({
-    sent: transactions.filter((item) => item.direction === "debit" && item.transaction_type === "transfer").reduce((sum, item) => sum + item.amount, 0),
-    received: transactions.filter((item) => item.direction === "credit").reduce((sum, item) => sum + item.amount, 0),
-    services: transactions.filter((item) => ["airtime", "bill_payment"].includes(item.transaction_type)).reduce((sum, item) => sum + item.amount, 0),
-  }), [transactions]);
   const chartData = useMemo(() => [...transactions].reverse().slice(-8).map((item, index) => ({ label: `T${index + 1}`, debit: item.direction === "debit" ? item.amount : 0, credit: item.direction === "credit" ? item.amount : 0 })), [transactions]);
 
   return (
@@ -53,12 +48,6 @@ export default function DashboardPage() {
                 <div className="flex gap-2"><Quick href="/fund-wallet" label="Fund wallet" icon={Wallet} primary /><Quick href="/send-money" label="Send money" icon={Send} /></div>
               </div>
             </section>
-
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <Metric label="Money sent" value={formatMoney(totals.sent)} icon={ArrowUpRight} />
-              <Metric label="Money received" value={formatMoney(totals.received)} icon={ArrowDownLeft} accent />
-              <Metric label="Bills & airtime" value={formatMoney(totals.services)} icon={CreditCard} />
-            </div>
 
             <section className="mt-5 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 sm:p-5">
               <div className="flex items-center justify-between"><div><p className="text-xs font-semibold">Money movement</p><p className="mt-1 text-[9px] text-white/30">Recent credits and debits</p></div><Link href="/transactions" className="text-[9px] text-emerald-300">View all activity</Link></div>
@@ -86,6 +75,5 @@ export default function DashboardPage() {
 }
 
 function Quick({ href, label, icon: Icon, primary = false }: { href: string; label: string; icon: typeof Wallet; primary?: boolean }) { return <Link href={href} className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-[10px] font-semibold ${primary ? "bg-emerald-400 text-[#07100b]" : "bg-white/[0.08] text-white"}`}><Icon className="h-3.5 w-3.5" />{label}</Link>; }
-function Metric({ label, value, icon: Icon, accent = false }: { label: string; value: string; icon: typeof Wallet; accent?: boolean }) { return <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4"><Icon className={`h-4 w-4 ${accent ? "text-emerald-300" : "text-white/35"}`} /><p className="mt-5 text-[9px] text-white/30">{label}</p><p className="mt-2 truncate text-base font-semibold">{value}</p></div>; }
 function Service({ href, label, icon: Icon }: { href: string; label: string; icon: typeof Wallet }) { return <Link href={href} className="rounded-xl border border-white/[0.06] bg-white/[0.018] p-3 transition hover:bg-white/[0.05]"><Icon className="h-4 w-4 text-emerald-300" /><p className="mt-4 text-[10px] font-medium text-white/65">{label}</p></Link>; }
 function Activity({ transaction }: { transaction: Transaction }) { const credit = transaction.direction === "credit"; return <div className="flex items-center gap-3 rounded-lg px-1 py-2.5"><span className={`rounded-lg p-2 ${credit ? "bg-emerald-400/10 text-emerald-300" : "bg-white/[0.05] text-white/40"}`}>{credit ? <ArrowDownLeft className="h-3 w-3" /> : <ArrowUpRight className="h-3 w-3" />}</span><div className="min-w-0 flex-1"><p className="truncate text-[10px] font-medium text-white/70">{transaction.description || startCase(transaction.transaction_type)}</p><p className="mt-1 text-[8px] text-white/25">{startCase(transaction.status)}</p></div><p className={`text-[10px] font-semibold ${credit ? "text-emerald-300" : "text-white/65"}`}>{credit ? "+" : "-"}{formatMoney(transaction.amount)}</p></div>; }

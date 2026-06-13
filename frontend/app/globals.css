@@ -1,4 +1,14 @@
 @import "tailwindcss";
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff;
+  -webkit-box-shadow: 0 0 0 1000px #101512 inset;
+  caret-color: #6ee7b7;
+  transition: background-color 9999s ease-out;
+}
 @import "tw-animate-css";
 
 :root {

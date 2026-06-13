@@ -21,12 +21,18 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 @router.post("/register")
 def register(payload: RegisterRequest, db: Database = Depends(get_db)) -> dict:
     user = AuthService(db).register_user(payload)
+    email_sent = user.get("verification_email_sent", False)
     return {
         "success": True,
-        "message": "Registration successful. Please verify your email.",
+        "message": (
+            "Registration successful. Please verify your email."
+            if email_sent
+            else "Registration successful, but the verification email could not be delivered. Use resend verification after checking Brevo."
+        ),
         "data": {
             "user": UserResponse.model_validate(user).model_dump(),
             "wallet_account_number": user["wallet"]["account_number"],
+            "verification_email_sent": email_sent,
         },
     }
 

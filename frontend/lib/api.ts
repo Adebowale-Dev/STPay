@@ -78,6 +78,20 @@ export function getApiErrorMessage(error: unknown, fallback = "Something went wr
     if (typeof detail === "string") {
       return detail;
     }
+    if (Array.isArray(detail)) {
+      const messages = detail
+        .map((item) => {
+          if (!item || typeof item !== "object" || !("msg" in item) || typeof item.msg !== "string") {
+            return null;
+          }
+          return item.msg.replace(/^Value error,\s*/i, "");
+        })
+        .filter((message): message is string => Boolean(message));
+
+      if (messages.length > 0) {
+        return messages.join(" ");
+      }
+    }
     if (typeof error.response?.data?.message === "string") {
       return error.response.data.message;
     }
@@ -128,6 +142,11 @@ export async function updateProfile(payload: Partial<Pick<User, "full_name" | "p
   return response.data;
 }
 
+export async function upgradeAccount(payload: { nin?: string; bvn?: string }) {
+  const response = await api.patch<ApiEnvelope<User>>("/users/upgrade-account", payload);
+  return response.data;
+}
+
 export async function changePassword(payload: { current_password: string; new_password: string; confirm_password: string }) {
   const response = await api.patch<ApiEnvelope<null>>("/users/change-password", payload);
   return response.data;
@@ -140,6 +159,32 @@ export async function changeTransactionPin(payload: { current_pin: string; new_p
 
 export async function fetchWalletBalance() {
   const response = await api.get<ApiEnvelope<WalletBalance>>("/wallet/balance");
+  return response.data;
+}
+
+export type ResolvedAccount = {
+  account_name: string;
+  account_number: string;
+  bank_name: string;
+};
+
+export type TransferResult = {
+  reference: string;
+  amount: number;
+  balance: number;
+  status: "successful" | "pending" | "failed";
+  description: string;
+  created_at: string;
+  sender_name: string;
+  receiver_name: string;
+  receiver_account_number: string;
+  bank_name: string;
+};
+
+export async function resolveTransferAccount(accountNumber: string) {
+  const response = await api.get<ApiEnvelope<ResolvedAccount>>(
+    `/wallet/resolve-account/${accountNumber}`,
+  );
   return response.data;
 }
 
@@ -156,9 +201,7 @@ export async function transferMoney(payload: {
   description?: string;
   transaction_pin: string;
 }) {
-  const response = await api.post<
-    ApiEnvelope<{ reference: string; amount: number; balance: number }>
-  >("/wallet/transfer", payload);
+  const response = await api.post<ApiEnvelope<TransferResult>>("/wallet/transfer", payload);
   return response.data;
 }
 
@@ -224,6 +267,22 @@ export async function markNotificationRead(id: string) {
 
 export async function fetchAdminUsers() {
   const response = await api.get<ApiEnvelope<AdminUser[]>>("/admin/users");
+  return response.data;
+}
+
+export type AdminCreatedCustomer = {
+  user: AdminUser;
+  temporary_password: string;
+  transaction_pin: string;
+  email_sent: boolean;
+};
+
+export async function createAdminCustomer(payload: {
+  full_name: string;
+  email: string;
+  phone_number: string;
+}) {
+  const response = await api.post<ApiEnvelope<AdminCreatedCustomer>>("/admin/users", payload);
   return response.data;
 }
 

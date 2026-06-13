@@ -34,6 +34,16 @@ def ensure_indexes(database: Database) -> None:
     database.users.create_index([("id", ASCENDING)], unique=True)
     database.users.create_index([("email", ASCENDING)], unique=True)
     database.users.create_index([("phone_number", ASCENDING)], unique=True)
+    database.users.create_index(
+        [("nin_hash", ASCENDING)],
+        unique=True,
+        sparse=True,
+    )
+    database.users.create_index(
+        [("bvn_hash", ASCENDING)],
+        unique=True,
+        sparse=True,
+    )
     database.wallets.create_index([("id", ASCENDING)], unique=True)
     database.wallets.create_index([("user_id", ASCENDING)], unique=True)
     database.wallets.create_index([("account_number", ASCENDING)], unique=True)

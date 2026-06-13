@@ -4,9 +4,11 @@ from pymongo.database import Database
 
 from app.database import get_db
 from app.dependencies import get_current_admin_user
+from app.schemas.admin import AdminCreateCustomerRequest
 from app.schemas.transaction import TransactionResponse
 from app.schemas.user import UserResponse
 from app.services.email_service import BrevoEmailService
+from app.services.auth_service import AuthService
 from app.services.notification_service import NotificationService
 from app.services.transaction_service import TransactionService
 from app.utils.mongo import from_decimal128, serialize_document, serialize_documents, utc_now
@@ -46,6 +48,27 @@ def list_users(
         "success": True,
         "message": "Users fetched successfully.",
         "data": [serialize_admin_user(db, user) for user in users],
+    }
+
+
+@router.post("/users")
+def create_user(
+    payload: AdminCreateCustomerRequest,
+    db: Database = Depends(get_db),
+    _: dict = Depends(get_current_admin_user),
+) -> dict:
+    user, temporary_password, transaction_pin, email_sent = (
+        AuthService(db).create_admin_assisted_customer(payload)
+    )
+    return {
+        "success": True,
+        "message": "Customer account created successfully.",
+        "data": {
+            "user": serialize_admin_user(db, user),
+            "temporary_password": temporary_password,
+            "transaction_pin": transaction_pin,
+            "email_sent": email_sent,
+        },
     }
 
 

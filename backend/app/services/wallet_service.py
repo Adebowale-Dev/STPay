@@ -11,6 +11,7 @@ from app.schemas.wallet import FundWalletRequest, TransferRequest
 from app.services.email_service import BrevoEmailService
 from app.services.notification_service import NotificationService
 from app.utils.generate_reference import generate_reference
+from app.utils.account_tiers import get_account_tier, get_tier_limits
 from app.utils.mongo import (
     from_decimal128,
     generate_id,
@@ -44,14 +45,56 @@ class WalletService:
         if transaction_pin and not verify_value(transaction_pin, user["transaction_pin_hash"]):
             raise HTTPException(status_code=400, detail="Invalid transaction PIN.")
 
+    @staticmethod
+    def _ensure_balance_capacity(user: dict, new_balance: Decimal) -> None:
+        max_balance = get_tier_limits(user)["max_balance"]
+        if max_balance is not None and new_balance > max_balance:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Tier {get_account_tier(user)} accounts can hold a maximum balance of "
+                    f"NGN {max_balance:,.2f}. Upgrade the account to receive this amount."
+                ),
+            )
+
+    @staticmethod
+    def _ensure_transfer_limit(user: dict, amount: Decimal) -> None:
+        max_transfer = get_tier_limits(user)["max_transfer"]
+        if max_transfer is not None and amount > max_transfer:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Tier {get_account_tier(user)} transfer limit is NGN {max_transfer:,.2f}. "
+                    "Upgrade your account to transfer more."
+                ),
+            )
+
     def get_wallet_balance(self, user: dict) -> dict:
         return serialize_document(self._get_wallet_for_user(user["id"]))
+
+    def resolve_account(self, user: dict, account_number: str) -> dict:
+        wallet = self.db.wallets.find_one({"account_number": account_number})
+        if wallet is None:
+            raise HTTPException(status_code=404, detail="Account number not found.")
+        if wallet["user_id"] == user["id"]:
+            raise HTTPException(status_code=400, detail="You cannot transfer to your own account.")
+
+        receiver = self.db.users.find_one({"id": wallet["user_id"]})
+        if receiver is None or not receiver["is_active"] or receiver["is_frozen"]:
+            raise HTTPException(status_code=400, detail="Receiver account is unavailable.")
+
+        return {
+            "account_name": receiver["full_name"],
+            "account_number": wallet["account_number"],
+            "bank_name": "STPay Digital Bank",
+        }
 
     def fund_wallet(self, user: dict, payload: FundWalletRequest) -> tuple[dict, dict]:
         self._ensure_transaction_ready(user)
         wallet = self._get_wallet_for_user(user["id"])
         current_balance = from_decimal128(wallet["balance"])
         new_balance = normalize_money(current_balance + payload.amount)
+        self._ensure_balance_capacity(user, new_balance)
         reference = generate_reference()
 
         self.db.wallets.update_one(
@@ -84,6 +127,7 @@ class WalletService:
 
     def transfer(self, sender: dict, payload: TransferRequest) -> tuple[dict, dict]:
         self._ensure_transaction_ready(sender, payload.transaction_pin)
+        self._ensure_transfer_limit(sender, payload.amount)
         sender_wallet = self._get_wallet_for_user(sender["id"])
         receiver_wallet = self.db.wallets.find_one({"account_number": payload.receiver_account_number})
         if receiver_wallet is None:
@@ -102,6 +146,7 @@ class WalletService:
 
         new_sender_balance = normalize_money(sender_balance - payload.amount)
         new_receiver_balance = normalize_money(receiver_balance + payload.amount)
+        self._ensure_balance_capacity(receiver, new_receiver_balance)
         reference = generate_reference()
 
         self.db.wallets.update_one(

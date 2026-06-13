@@ -9,6 +9,11 @@ export type User = {
   is_active: boolean;
   is_frozen: boolean;
   is_email_verified: boolean;
+  account_tier: 1 | 2 | 3;
+  nin_verified: boolean;
+  bvn_verified: boolean;
+  nin_last4?: string | null;
+  bvn_last4?: string | null;
   created_at: string;
   updated_at: string;
 };

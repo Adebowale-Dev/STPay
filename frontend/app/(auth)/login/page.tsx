@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
-import { ArrowRight, LoaderCircle } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useMemo, useState } from "react";
+import { ArrowRight, CircleCheck, LoaderCircle } from "lucide-react";
 
 import { AuthFormField } from "@/components/auth/AuthFormField";
 import { AuthShell } from "@/components/auth/AuthShell";
@@ -12,11 +12,22 @@ import { getApiErrorMessage, loginUser } from "@/lib/api";
 import { storeAuthSession } from "@/lib/auth";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginPageFallback />}>
+      <LoginPageContent />
+    </Suspense>
+  );
+}
+
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialIdentifier = useMemo(() => searchParams.get("email") ?? "", [searchParams]);
+  const emailVerified = searchParams.get("verified") === "true";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    identifier: "",
+    identifier: initialIdentifier,
     password: "",
   });
 
@@ -46,6 +57,13 @@ export default function LoginPage() {
       description="Enter your account details to continue to your wallet and banking dashboard."
     >
       <form onSubmit={handleSubmit} className="grid gap-5">
+        {emailVerified ? (
+          <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            <CircleCheck className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>Your email has been verified. Sign in to access your new STPay account.</p>
+          </div>
+        ) : null}
+
         <AuthFormField
           label="Email address or phone number"
           value={formData.identifier}
@@ -118,6 +136,20 @@ export default function LoginPage() {
       <p className="mt-5 text-center text-xs leading-6 text-muted-foreground">
         By continuing, you agree to STPay&apos;s terms of service and privacy policy.
       </p>
+    </AuthShell>
+  );
+}
+
+function LoginPageFallback() {
+  return (
+    <AuthShell
+      eyebrow="Welcome back"
+      title="Sign in to STPay"
+      description="Preparing your secure login..."
+    >
+      <div className="flex min-h-48 items-center justify-center">
+        <LoaderCircle className="h-6 w-6 animate-spin text-[var(--brand-green)]" />
+      </div>
     </AuthShell>
   );
 }
