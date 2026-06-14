@@ -19,11 +19,11 @@ import {
   normalizeNigerianPhoneNumber,
 } from "@/lib/nigerian-network";
 
-const networkOptions: { label: string; value: NigerianNetwork }[] = [
-  { label: "MTN", value: "MTN" },
-  { label: "Airtel", value: "Airtel" },
-  { label: "Glo", value: "Glo" },
-  { label: "9mobile", value: "9mobile" },
+const networkOptions: { label: string; value: NigerianNetwork; logo: string }[] = [
+  { label: "MTN", value: "MTN", logo: "/biller-logos/providers/mtn-ng.png" },
+  { label: "Airtel", value: "Airtel", logo: "/biller-logos/providers/airtel-com-ng.png" },
+  { label: "Glo", value: "Glo", logo: "/biller-logos/providers/glo.svg" },
+  { label: "9mobile", value: "9mobile", logo: "/biller-logos/providers/9mobile.svg" },
 ];
 
 export default function AirtimePage() {

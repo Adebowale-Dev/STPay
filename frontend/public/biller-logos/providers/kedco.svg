@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#092c55"/>
+  <path d="M35 5 15 35h14l-4 24 25-36H35z" fill="#f6bd19"/>
+  <text x="47" y="55" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" font-weight="700" fill="#fff">KEDCO</text>
+</svg>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#fff"/>
+  <circle cx="32" cy="28" r="20" fill="#0a74ba"/>
+  <path d="M34 10 21 30h10l-3 16 17-24H34z" fill="#8bc34a"/>
+  <text x="32" y="59" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#0a74ba">YEDC</text>
+</svg>

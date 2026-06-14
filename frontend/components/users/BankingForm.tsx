@@ -1,4 +1,5 @@
 import { CheckCircle2, ChevronDown, Wallet } from "lucide-react";
+import Image from "next/image";
 import { ReactNode } from "react";
 
 import {
@@ -17,6 +18,7 @@ export const bankingLabelClass = "grid gap-2 text-[10px] font-medium text-white/
 export type BankingDropdownOption = {
   label: string;
   value: string;
+  logo?: string;
 };
 
 export function BankingDropdown({
@@ -41,7 +43,10 @@ export function BankingDropdown({
             type="button"
             className={`${bankingFieldClass} flex items-center justify-between text-left`}
           >
-            <span className="truncate">{selected?.label ?? "Select an option"}</span>
+            <span className="flex min-w-0 items-center gap-2">
+              {selected?.logo ? <DropdownOptionLogo src={selected.logo} label={selected.label} /> : null}
+              <span className="truncate">{selected?.label ?? "Select an option"}</span>
+            </span>
             <ChevronDown className="h-3.5 w-3.5 shrink-0 text-white/30" />
           </button>
         </DropdownMenuTrigger>
@@ -59,13 +64,31 @@ export function BankingDropdown({
                 value={option.value}
                 className="cursor-pointer px-2.5 py-2 text-[10px] text-white/55 focus:bg-emerald-400/10 focus:text-emerald-200 data-[state=checked]:text-emerald-300"
               >
-                {option.label}
+                <span className="flex min-w-0 items-center gap-2">
+                  {option.logo ? <DropdownOptionLogo src={option.logo} label={option.label} /> : null}
+                  <span className="truncate">{option.label}</span>
+                </span>
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
+  );
+}
+
+function DropdownOptionLogo({ src, label }: { src: string; label: string }) {
+  return (
+    <span className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-md bg-white p-1">
+      <Image
+        unoptimized
+        src={src}
+        alt={`${label} logo`}
+        width={24}
+        height={24}
+        className="h-full w-full object-contain"
+      />
+    </span>
   );
 }
 

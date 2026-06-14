@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#fff"/>
+  <path d="M8 43c10-19 22-29 48-31-12 8-19 17-23 29-8-4-16-3-25 2Z" fill="#65a30d"/>
+  <path d="M19 48c8-16 19-23 36-26-9 8-14 17-15 28-7-4-14-4-21-2Z" fill="#f2c318"/>
+  <text x="32" y="58" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="#275a24">BEDC</text>
+</svg>
