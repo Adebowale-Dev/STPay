@@ -49,6 +49,7 @@ def ensure_indexes(database: Database) -> None:
     database.wallets.create_index([("account_number", ASCENDING)], unique=True)
     database.transactions.create_index([("id", ASCENDING)], unique=True)
     database.transactions.create_index([("reference", ASCENDING)])
+    database.transactions.create_index([("external_transfer", ASCENDING), ("status", ASCENDING)])
     database.beneficiaries.create_index([("id", ASCENDING)], unique=True)
     database.email_otps.create_index([("id", ASCENDING)], unique=True)
     database.email_otps.create_index([("email", ASCENDING)])

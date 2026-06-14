@@ -3,7 +3,13 @@ from pymongo.database import Database
 
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.schemas.wallet import FundWalletRequest, TransferRequest, WalletBalanceResponse
+from app.schemas.wallet import (
+    ExternalAccountResolveRequest,
+    ExternalTransferRequest,
+    FundWalletRequest,
+    TransferRequest,
+    WalletBalanceResponse,
+)
 from app.services.wallet_service import WalletService
 
 
@@ -27,6 +33,19 @@ def get_balance(
     }
 
 
+@router.get("/banks")
+def list_banks(
+    db: Database = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    banks = WalletService(db).list_external_banks()
+    return {
+        "success": True,
+        "message": "Banks fetched successfully.",
+        "data": banks,
+    }
+
+
 @router.get("/resolve-account/{account_number}")
 def resolve_account(
     account_number: str,
@@ -37,6 +56,20 @@ def resolve_account(
     return {
         "success": True,
         "message": "Account resolved successfully.",
+        "data": account,
+    }
+
+
+@router.post("/resolve-external-account")
+def resolve_external_account(
+    payload: ExternalAccountResolveRequest,
+    db: Database = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    account = WalletService(db).resolve_external_account(payload.account_number, payload.bank_code)
+    return {
+        "success": True,
+        "message": "External bank account resolved successfully.",
         "data": account,
     }
 
@@ -85,5 +118,47 @@ def transfer(
             "receiver_name": account["account_name"],
             "receiver_account_number": account["account_number"],
             "bank_name": account["bank_name"],
+        },
+    }
+
+
+@router.post("/external-transfer")
+def external_transfer(
+    payload: ExternalTransferRequest,
+    db: Database = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    wallet, transaction = WalletService(db).external_transfer(current_user, payload)
+    return {
+        "success": True,
+        "message": "External transfer is processing.",
+        "data": {
+            "reference": transaction["reference"],
+            "amount": transaction["amount"],
+            "balance": wallet["balance"],
+            "status": transaction["status"],
+            "description": transaction["description"],
+            "created_at": transaction["created_at"],
+            "sender_name": current_user["full_name"],
+            "receiver_name": transaction["receiver_name"],
+            "receiver_account_number": transaction["receiver_account_number"],
+            "bank_name": transaction["bank_name"],
+        },
+    }
+
+
+@router.get("/external-transfer/{reference}/status")
+def external_transfer_status(
+    reference: str,
+    db: Database = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    wallet, transaction = WalletService(db).reconcile_external_transfer(current_user, reference)
+    return {
+        "success": True,
+        "message": "External transfer status fetched successfully.",
+        "data": {
+            "status": transaction["status"],
+            "balance": wallet["balance"],
         },
     }

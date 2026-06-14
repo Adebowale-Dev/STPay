@@ -166,6 +166,15 @@ export type ResolvedAccount = {
   account_name: string;
   account_number: string;
   bank_name: string;
+  bank_code: string;
+  transfer_method: "internal" | "external";
+};
+
+export type TransferBank = {
+  name: string;
+  code: string;
+  slug?: string | null;
+  test_mode?: boolean;
 };
 
 export type TransferResult = {
@@ -188,6 +197,22 @@ export async function resolveTransferAccount(accountNumber: string) {
   return response.data;
 }
 
+export async function fetchTransferBanks() {
+  const response = await api.get<ApiEnvelope<TransferBank[]>>("/wallet/banks");
+  return response.data;
+}
+
+export async function resolveExternalTransferAccount(payload: {
+  account_number: string;
+  bank_code: string;
+}) {
+  const response = await api.post<ApiEnvelope<ResolvedAccount>>(
+    "/wallet/resolve-external-account",
+    payload,
+  );
+  return response.data;
+}
+
 export async function fundWallet(payload: { amount: number; payment_method: string }) {
   const response = await api.post<
     ApiEnvelope<{ reference: string; amount: number; balance: number }>
@@ -202,6 +227,24 @@ export async function transferMoney(payload: {
   transaction_pin: string;
 }) {
   const response = await api.post<ApiEnvelope<TransferResult>>("/wallet/transfer", payload);
+  return response.data;
+}
+
+export async function transferToExternalBank(payload: {
+  account_number: string;
+  bank_code: string;
+  amount: number;
+  description?: string;
+  transaction_pin: string;
+}) {
+  const response = await api.post<ApiEnvelope<TransferResult>>("/wallet/external-transfer", payload);
+  return response.data;
+}
+
+export async function fetchExternalTransferStatus(reference: string) {
+  const response = await api.get<
+    ApiEnvelope<{ status: "successful" | "pending" | "failed"; balance: number }>
+  >(`/wallet/external-transfer/${reference}/status`);
   return response.data;
 }
 

@@ -110,3 +110,16 @@ credentials and preserves its wallet balance.
 - All sensitive values are read from environment variables.
 - Email delivery is implemented with the Brevo API.
 - MongoDB multi-document transactions require a replica set in production if you want strict atomic transfer guarantees.
+# External bank transfers
+
+External Nigerian bank account resolution and transfers use Paystack. Add a Paystack test secret
+key to `.env` while developing:
+
+```env
+PAYSTACK_SECRET_KEY=sk_test_your_key
+PAYSTACK_API_URL=https://api.paystack.co
+```
+
+Configure the Paystack webhook URL as `https://your-public-backend/webhooks/paystack`. Paystack
+cannot reach a localhost URL, so use a deployed backend or a secure development tunnel when
+testing webhook status updates and automatic refunds.

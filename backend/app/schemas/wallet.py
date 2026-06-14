@@ -29,3 +29,14 @@ class TransferRequest(BaseModel):
     amount: Decimal = Field(gt=0, decimal_places=2)
     description: str | None = Field(default=None, max_length=500)
     transaction_pin: str = Field(min_length=4, max_length=4)
+
+
+class ExternalAccountResolveRequest(BaseModel):
+    account_number: str = Field(min_length=10, max_length=10, pattern=r"^\d{10}$")
+    bank_code: str = Field(min_length=2, max_length=20)
+
+
+class ExternalTransferRequest(ExternalAccountResolveRequest):
+    amount: Decimal = Field(gt=0, decimal_places=2)
+    description: str | None = Field(default=None, max_length=500)
+    transaction_pin: str = Field(min_length=4, max_length=4)

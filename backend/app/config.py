@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     brevo_api_key: str = Field(default="", alias="BREVO_API_KEY")
     brevo_sender_email: str = Field(default="", alias="BREVO_SENDER_EMAIL")
     brevo_sender_name: str = Field(default="STPay", alias="BREVO_SENDER_NAME")
+    paystack_secret_key: str = Field(default="", alias="PAYSTACK_SECRET_KEY")
+    paystack_api_url: str = Field(default="https://api.paystack.co", alias="PAYSTACK_API_URL")
     frontend_url: str = Field(default="http://localhost:3000", alias="FRONTEND_URL")
 
     model_config = SettingsConfigDict(

@@ -21,18 +21,25 @@ import { FormEvent, useEffect, useState } from "react";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 import { AppShell } from "@/components/users/AppShell";
 import { bankingFieldClass, bankingLabelClass } from "@/components/users/BankingForm";
+import { BankingDropdown } from "@/components/users/BankingForm";
 import { ReceiptData, ReceiptModal } from "@/components/users/ReceiptModal";
 import {
   addBeneficiary,
+  fetchExternalTransferStatus,
+  fetchTransferBanks,
   getApiErrorMessage,
   ResolvedAccount,
+  resolveExternalTransferAccount,
   resolveTransferAccount,
+  TransferBank,
   transferMoney,
+  transferToExternalBank,
   TransferResult,
 } from "@/lib/api";
 import { formatDateTime, formatMoney } from "@/lib/format";
 
 type FormState = {
+  bank_code: string;
   receiver_account_number: string;
   amount: string;
   description: string;
@@ -41,11 +48,12 @@ type FormState = {
 
 type TransferState =
   | { status: "idle" }
-  | { status: "pending" }
-  | { status: "successful"; data: TransferResult }
+  | { status: "submitting" }
+  | { status: "completed"; data: TransferResult }
   | { status: "failed"; message: string };
 
 const emptyForm: FormState = {
+  bank_code: "",
   receiver_account_number: "",
   amount: "",
   description: "",
@@ -62,16 +70,75 @@ export default function SendMoneyPage() {
   const [beneficiaryMessage, setBeneficiaryMessage] = useState<string | null>(null);
   const [transfer, setTransfer] = useState<TransferState>({ status: "idle" });
   const [receiptOpen, setReceiptOpen] = useState(false);
+  const [banks, setBanks] = useState<TransferBank[]>([
+    { name: "STPay Digital Bank", code: "STPAY", slug: "stpay" },
+  ]);
+  const [banksLoading, setBanksLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    fetchTransferBanks()
+      .then((response) => {
+        if (active) {
+          setBanks([{ name: "STPay Digital Bank", code: "STPAY", slug: "stpay" }, ...response.data]);
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setBanksLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (transfer.status !== "completed" || transfer.data.status !== "pending") return;
+
+    let active = true;
+    const timer = window.setInterval(async () => {
+      try {
+        const response = await fetchExternalTransferStatus(transfer.data.reference);
+        if (active && response.data.status !== "pending") {
+          setTransfer((current) =>
+            current.status === "completed"
+              ? {
+                  status: "completed",
+                  data: {
+                    ...current.data,
+                    status: response.data.status,
+                    balance: response.data.balance,
+                  },
+                }
+              : current,
+          );
+        }
+      } catch {
+        // Signed webhooks remain the primary status source; polling is a fallback.
+      }
+    }, 5000);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [transfer]);
 
   useEffect(() => {
     const accountNumber = form.receiver_account_number;
-    if (accountNumber.length !== 10) return;
+    if (accountNumber.length !== 10 || !form.bank_code) return;
 
     let active = true;
     const timer = window.setTimeout(async () => {
       setResolving(true);
       try {
-        const response = await resolveTransferAccount(accountNumber);
+        const response =
+          form.bank_code === "STPAY"
+            ? await resolveTransferAccount(accountNumber)
+            : await resolveExternalTransferAccount({
+                account_number: accountNumber,
+                bank_code: form.bank_code,
+              });
         if (active) setAccount(response.data);
       } catch (error) {
         if (active) setLookupError(getApiErrorMessage(error, "Unable to resolve this account."));
@@ -84,7 +151,7 @@ export default function SendMoneyPage() {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [form.receiver_account_number]);
+  }, [form.bank_code, form.receiver_account_number]);
 
   const set = (key: keyof FormState, value: string) =>
     setForm((current) => ({ ...current, [key]: value }));
@@ -98,6 +165,14 @@ export default function SendMoneyPage() {
     set("receiver_account_number", value.replace(/\D/g, "").slice(0, 10));
   }
 
+  function setBankCode(value: string) {
+    setAccount(null);
+    setLookupError(null);
+    setBeneficiaryState("idle");
+    setBeneficiaryMessage(null);
+    setForm((current) => ({ ...current, bank_code: value, receiver_account_number: "" }));
+  }
+
   const canContinue = Boolean(account && Number(form.amount) > 0 && form.transaction_pin.length === 4);
 
   function requestConfirmation(event: FormEvent) {
@@ -107,12 +182,26 @@ export default function SendMoneyPage() {
 
   async function sendTransfer() {
     setConfirming(false);
-    setTransfer({ status: "pending" });
+    setTransfer({ status: "submitting" });
     setBeneficiaryMessage(null);
 
     try {
-      const response = await transferMoney({ ...form, amount: Number(form.amount) });
-      setTransfer({ status: "successful", data: response.data });
+      const response =
+        form.bank_code === "STPAY"
+          ? await transferMoney({
+              receiver_account_number: form.receiver_account_number,
+              amount: Number(form.amount),
+              description: form.description,
+              transaction_pin: form.transaction_pin,
+            })
+          : await transferToExternalBank({
+              account_number: form.receiver_account_number,
+              bank_code: form.bank_code,
+              amount: Number(form.amount),
+              description: form.description,
+              transaction_pin: form.transaction_pin,
+            });
+      setTransfer({ status: "completed", data: response.data });
 
     } catch (error) {
       setTransfer({
@@ -156,7 +245,7 @@ export default function SendMoneyPage() {
   }
 
   const receipt: ReceiptData | null =
-    transfer.status === "successful"
+    transfer.status === "completed"
       ? {
           reference: transfer.data.reference,
           type: "transfer",
@@ -173,7 +262,7 @@ export default function SendMoneyPage() {
 
   return (
     <ProtectedRoute>
-      <AppShell title="Send money" description="Resolve an STPay account and complete a secure wallet transfer.">
+      <AppShell title="Send money" description="Send securely to STPay or supported Nigerian bank accounts.">
         {transfer.status === "idle" ? (
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_330px]">
             <form onSubmit={requestConfirmation} className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5 sm:p-6">
@@ -186,10 +275,26 @@ export default function SendMoneyPage() {
               </div>
 
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <BankingDropdown
+                    label={banksLoading ? "Loading destination banks..." : "Destination bank"}
+                    value={form.bank_code}
+                    onChange={setBankCode}
+                    options={banks.map((bank) => ({
+                      label: bank.test_mode ? `${bank.name} - Test mode` : bank.name,
+                      value: bank.code,
+                    }))}
+                  />
+                  {form.bank_code === "001" ? (
+                    <p className="mt-2 text-[9px] leading-4 text-amber-200/70">
+                      Test mode accepts any 10-digit account number and returns a simulated account name.
+                    </p>
+                  ) : null}
+                </div>
                 <label className={`${bankingLabelClass} sm:col-span-2`}>
                   Receiver account number
                   <div className="relative">
-                    <input className={`${bankingFieldClass} pr-11`} inputMode="numeric" value={form.receiver_account_number} onChange={(event) => setAccountNumber(event.target.value)} placeholder="Enter 10-digit account number" required />
+                    <input disabled={!form.bank_code} className={`${bankingFieldClass} pr-11`} inputMode="numeric" value={form.receiver_account_number} onChange={(event) => setAccountNumber(event.target.value)} placeholder={form.bank_code ? "Enter 10-digit account number" : "Select a destination bank first"} required />
                     <span className="absolute inset-y-0 right-3 grid place-items-center text-white/25">
                       {resolving ? <LoaderCircle className="h-4 w-4 animate-spin text-emerald-300" /> : account ? <CheckCircle2 className="h-4 w-4 text-emerald-300" /> : <Building2 className="h-4 w-4" />}
                     </span>
@@ -252,9 +357,10 @@ function Confirmation({ account, amount, description, beneficiarySaved, onCancel
 }
 
 function TransferStatus({ state, beneficiaryMessage, onRetry, onNew, onReceipt }: { state: Exclude<TransferState, { status: "idle" }>; beneficiaryMessage: string | null; onRetry: () => void; onNew: () => void; onReceipt: () => void }) {
-  const pending = state.status === "pending";
-  const successful = state.status === "successful";
-  return <section className="mx-auto max-w-xl rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6 text-center sm:p-10"><span className={`mx-auto grid h-16 w-16 place-items-center rounded-full ${pending ? "bg-amber-300/10 text-amber-300" : successful ? "bg-emerald-400/10 text-emerald-300" : "bg-rose-400/10 text-rose-300"}`}>{pending ? <Clock3 className="h-7 w-7 animate-pulse" /> : successful ? <Check className="h-7 w-7" /> : <XCircle className="h-7 w-7" />}</span><p className="mt-6 text-lg font-semibold">{pending ? "Transfer pending" : successful ? "Transfer successful" : "Transfer failed"}</p><p className="mx-auto mt-2 max-w-sm text-[10px] leading-5 text-white/35">{pending ? "Your transfer is being securely processed. Please keep this page open." : successful ? `${formatMoney(state.data.amount)} was sent to ${state.data.receiver_name}.` : state.message}</p>{successful ? <div className="mx-auto mt-6 max-w-sm rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-left"><Line label="Reference" value={state.data.reference} /><div className="mt-3"><Line label="New available balance" value={formatMoney(state.data.balance)} /></div>{beneficiaryMessage ? <p className="mt-3 border-t border-white/[0.06] pt-3 text-[9px] text-emerald-300/75">{beneficiaryMessage}</p> : null}</div> : null}<div className="mt-7 flex flex-wrap justify-center gap-2">{state.status === "failed" ? <button type="button" onClick={onRetry} className="inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-400 px-4 text-[10px] font-semibold text-[#07100b]"><RefreshCw className="h-3.5 w-3.5" /> Try again</button> : null}{successful ? <><button type="button" onClick={onReceipt} className="inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-400 px-4 text-[10px] font-semibold text-[#07100b]"><FileText className="h-3.5 w-3.5" /> View receipt</button><button type="button" onClick={onNew} className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/[0.08] px-4 text-[10px] text-white/55"><ArrowLeft className="h-3.5 w-3.5" /> New transfer</button></> : null}</div></section>;
+  const pending = state.status === "submitting" || (state.status === "completed" && state.data.status === "pending");
+  const successful = state.status === "completed" && state.data.status === "successful";
+  const completed = state.status === "completed";
+  return <section className="mx-auto max-w-xl rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6 text-center sm:p-10"><span className={`mx-auto grid h-16 w-16 place-items-center rounded-full ${pending ? "bg-amber-300/10 text-amber-300" : successful ? "bg-emerald-400/10 text-emerald-300" : "bg-rose-400/10 text-rose-300"}`}>{pending ? <Clock3 className="h-7 w-7 animate-pulse" /> : successful ? <Check className="h-7 w-7" /> : <XCircle className="h-7 w-7" />}</span><p className="mt-6 text-lg font-semibold">{pending ? "Transfer pending" : successful ? "Transfer successful" : "Transfer failed"}</p><p className="mx-auto mt-2 max-w-sm text-[10px] leading-5 text-white/35">{state.status === "failed" ? state.message : state.status === "submitting" ? "Your transfer is being securely submitted. Please keep this page open." : pending ? "The destination bank is processing your transfer. Its final status will update after confirmation." : `${formatMoney(state.data.amount)} was sent to ${state.data.receiver_name}.`}</p>{completed ? <div className="mx-auto mt-6 max-w-sm rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-left"><Line label="Reference" value={state.data.reference} /><div className="mt-3"><Line label="New available balance" value={formatMoney(state.data.balance)} /></div>{beneficiaryMessage ? <p className="mt-3 border-t border-white/[0.06] pt-3 text-[9px] text-emerald-300/75">{beneficiaryMessage}</p> : null}</div> : null}<div className="mt-7 flex flex-wrap justify-center gap-2">{state.status === "failed" ? <button type="button" onClick={onRetry} className="inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-400 px-4 text-[10px] font-semibold text-[#07100b]"><RefreshCw className="h-3.5 w-3.5" /> Try again</button> : null}{completed ? <><button type="button" onClick={onReceipt} className="inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-400 px-4 text-[10px] font-semibold text-[#07100b]"><FileText className="h-3.5 w-3.5" /> View receipt</button><button type="button" onClick={onNew} className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/[0.08] px-4 text-[10px] text-white/55"><ArrowLeft className="h-3.5 w-3.5" /> New transfer</button></> : null}</div></section>;
 }
 
 function Line({ label, value }: { label: string; value: string }) {

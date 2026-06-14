@@ -18,6 +18,7 @@ from app.routes.notifications import router as notifications_router
 from app.routes.transactions import router as transactions_router
 from app.routes.users import router as users_router
 from app.routes.wallet import router as wallet_router
+from app.routes.webhooks import router as webhooks_router
 
 
 settings = get_settings()
@@ -50,6 +51,7 @@ app.include_router(transactions_router)
 app.include_router(beneficiaries_router)
 app.include_router(notifications_router)
 app.include_router(admin_router)
+app.include_router(webhooks_router)
 
 
 @app.on_event("startup")

@@ -58,9 +58,9 @@ export function BankingDropdown({
             {label}
           </DropdownMenuLabel>
           <DropdownMenuRadioGroup value={value} onValueChange={onChange}>
-            {options.map((option) => (
+            {options.map((option, index) => (
               <DropdownMenuRadioItem
-                key={option.value}
+                key={`${option.value}-${option.label}-${index}`}
                 value={option.value}
                 className="cursor-pointer px-2.5 py-2 text-[10px] text-white/55 focus:bg-emerald-400/10 focus:text-emerald-200 data-[state=checked]:text-emerald-300"
               >
