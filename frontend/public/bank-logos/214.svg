@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#fff"/>
+  <path d="M13 13h17v17H13V13Zm21 0h17v17H34V13ZM13 34h17v17H13V34Z" fill="#5b2c83"/>
+  <path d="M34 34h17v17H34V34Z" fill="#f4b223"/>
+  <text x="32" y="61" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" font-weight="700" fill="#5b2c83">FCMB</text>
+</svg>

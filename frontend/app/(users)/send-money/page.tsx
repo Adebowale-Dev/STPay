@@ -37,6 +37,7 @@ import {
   TransferResult,
 } from "@/lib/api";
 import { formatDateTime, formatMoney } from "@/lib/format";
+import { getBankLogo } from "@/lib/bank-logos";
 
 type FormState = {
   bank_code: string;
@@ -283,6 +284,7 @@ export default function SendMoneyPage() {
                     options={banks.map((bank) => ({
                       label: bank.test_mode ? `${bank.name} - Test mode` : bank.name,
                       value: bank.code,
+                      logo: getBankLogo(bank.code),
                     }))}
                   />
                   {form.bank_code === "001" ? (

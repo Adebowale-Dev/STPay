@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#082b5c"/>
+  <path d="M13 38c9-16 21-25 39-26-9 7-15 14-17 23 8-5 14-5 18-2-8 3-14 8-18 18H24c2-7 5-12 10-16-8 1-15 2-21 3Z" fill="#f0b323"/>
+  <text x="32" y="59" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" font-weight="700" fill="#fff">FIRSTBANK</text>
+</svg>

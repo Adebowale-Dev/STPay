@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#fff"/>
+  <path d="M13 15h38L32 49 13 15Z" fill="#5bc5c8"/>
+  <path d="M22 21h20L32 39 22 21Z" fill="#273f7d"/>
+  <text x="32" y="59" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" font-weight="700" fill="#273f7d">POLARIS</text>
+</svg>
